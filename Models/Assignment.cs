@@ -1,11 +1,13 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace DisasterApi.Models;
 
 public class Assignment
 {
     [Key]
+    [JsonIgnore]
     public int id { get; set; }
 
     [ForeignKey("Truck")]
@@ -17,5 +19,7 @@ public class Assignment
     public Area Area { get; set; } = null!;
     
     public Dictionary<string, int> RequireDelivered { get; set; } = new();
+
+    [JsonIgnore]
     public DateTime AssignedAt { get; set; } = DateTime.UtcNow;
 }
