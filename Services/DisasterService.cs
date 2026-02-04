@@ -16,7 +16,6 @@ public class DisasterService
     {
         _context = context;
         _cache = cache;
-        _AddCacheOptions = new DistributedCacheEntryOptions{AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)};
         _AssignmentCacheOptions = new DistributedCacheEntryOptions{AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30) };
     }
 
@@ -39,11 +38,6 @@ public class DisasterService
             }
 
             _context.SaveChanges();
-
-            await _cache.SetStringAsync(
-                $"area:{area.AreaID}",
-                JsonSerializer.Serialize(existing),
-                _AddCacheOptions);
 
             return (true, $"AreaID '{area.AreaID}' successfully");
         }
@@ -72,11 +66,6 @@ public class DisasterService
 
             _context.SaveChanges();
 
-            await _cache.SetStringAsync(
-                $"truck:{truck.TruckID}",
-                JsonSerializer.Serialize(existing),
-                _AddCacheOptions);
-
             return (true, $"TruckID '{truck.TruckID}' successfully");
         }
         catch (Exception ex)
@@ -87,8 +76,7 @@ public class DisasterService
 
     public void GenerateAssignments()
     {
-        // Placeholder for assignment generation logic
-        // This would typically involve complex logic to match resources to affected areas
+
     }
 
     public List<Assignment> GetAssignments()
