@@ -1,9 +1,12 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
 namespace DisasterApi.Models;
 
+/// <summary>
+/// งานที่มอบหมายให้รถขนส่งไปยังพื้นที่ประสบภัย
+/// </summary>
 public class Assignment
 {
     [Key]

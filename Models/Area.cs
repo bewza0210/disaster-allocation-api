@@ -12,13 +12,14 @@ public class Area
     [JsonIgnore]
     public int id { get; set; }
 
-    public string AreaID { get; set; }
+    public required string AreaID { get; set; }
 
-    public int UrgentyLevel { get; set; } = 0;
+    public int UrgentyLevel { get; set; }
 
     public Dictionary<string, int> RequireResources { get; set; } = new();
 
-    public int TimeConstraint { get; set; } = 0;
+    [Range(1, int.MaxValue, ErrorMessage = "TimeConstraint must be greater than 0")]
+    public int TimeConstraint { get; set; }
 
     [JsonIgnore]
     public DateTime CreateAt { get; set; } = DateTime.UtcNow;

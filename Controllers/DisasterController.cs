@@ -15,19 +15,19 @@ public class DisasterController : ControllerBase
     }
 
     [HttpPost("areas")]
-    public IActionResult AddAffectedAreas([FromBody] Area area)
+    public async Task<IActionResult> AddAffectedAreas([FromBody] Area area)
     {
-        var result = _service.AddAffectedArea(area);
+        var result = await _service.AddAffectedArea(area);
         if (!result.success) return Conflict(new { result.message });
         return Ok(new { result.message });
     }
 
     [HttpPost("trucks")]
-    public IActionResult AddResourceTrucks([FromBody] Truck truck)
+    public async Task<IActionResult> AddResourceTrucks([FromBody] Truck truck)
     {
-        var result = _service.AddResourceTruck(truck);
+        var result = await _service.AddResourceTruck(truck);
         if (!result.success) return Conflict(new { result.message });
-        return Ok(new { result.message });
+        return Ok(new { result.message});
     }
 
     [HttpPost("assignments")]

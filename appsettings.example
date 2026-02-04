@@ -1,6 +1,7 @@
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Host=localhost;Port=5432;Database=yourDatabase;Username=yourusername;Password=yourpassword"
+    "DefaultConnection": "Host=localhost;Port=5432;Database=yourDatabase;Username=yourusername;Password=yourpassword",
+    "Redis": "localhost:6379"
   },
   "Logging": {
     "LogLevel": {

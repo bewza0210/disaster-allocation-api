@@ -1,18 +1,26 @@
-using DisasterApi.Data;
+﻿using DisasterApi.Data;
 using DisasterApi.Models;
+using Microsoft.Extensions.Caching.Distributed;
+using System.Text.Json;
 
 namespace DisasterApi.Services;
 
 public class DisasterService
 {
     private readonly AppDbContext _context;
+    private readonly IDistributedCache _cache;
+    private readonly DistributedCacheEntryOptions _AddCacheOptions;
+    private readonly DistributedCacheEntryOptions _AssignmentCacheOptions;
 
-    public DisasterService(AppDbContext context)
+    public DisasterService(AppDbContext context, IDistributedCache cache)
     {
         _context = context;
+        _cache = cache;
+        _AddCacheOptions = new DistributedCacheEntryOptions{AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)};
+        _AssignmentCacheOptions = new DistributedCacheEntryOptions{AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30) };
     }
 
-    public (bool success, string message) AddAffectedArea(Area area)
+    public async Task<(bool success, string message)> AddAffectedArea(Area area)
     {
         try
         {
@@ -23,13 +31,21 @@ public class DisasterService
                 existing.UrgentyLevel = area.UrgentyLevel;
                 existing.RequireResources = area.RequireResources;
                 existing.TimeConstraint = area.TimeConstraint;
-                _context.SaveChanges();
-                return (true, $"AreaID '{area.AreaID}' updated successfully");
+            }
+            else
+            {
+                _context.Areas.Add(area);
+                existing = area;
             }
 
-            _context.Areas.Add(area);
             _context.SaveChanges();
-            return (true, $"AreaID '{area.AreaID}' created successfully");
+
+            await _cache.SetStringAsync(
+                $"area:{area.AreaID}",
+                JsonSerializer.Serialize(existing),
+                _AddCacheOptions);
+
+            return (true, $"AreaID '{area.AreaID}' successfully");
         }
         catch (Exception ex)
         {
@@ -37,7 +53,7 @@ public class DisasterService
         }
     }
 
-    public (bool success, string message) AddResourceTruck(Truck truck)
+    public async Task<(bool success, string message)> AddResourceTruck(Truck truck)
     {
         try
         {
@@ -47,13 +63,21 @@ public class DisasterService
             {
                 existing.AvailableResources = truck.AvailableResources;
                 existing.TravelTimeToArea = truck.TravelTimeToArea;
-                _context.SaveChanges();
-                return (true, $"TruckID '{truck.TruckID}' updated successfully");
+            }
+            else
+            {
+                _context.Trucks.Add(truck);
+                existing = truck;
             }
 
-            _context.Trucks.Add(truck);
             _context.SaveChanges();
-            return (true, $"TruckID '{truck.TruckID}' created successfully");
+
+            await _cache.SetStringAsync(
+                $"truck:{truck.TruckID}",
+                JsonSerializer.Serialize(existing),
+                _AddCacheOptions);
+
+            return (true, $"TruckID '{truck.TruckID}' successfully");
         }
         catch (Exception ex)
         {
