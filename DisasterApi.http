@@ -1,0 +1,6 @@
+@DisasterApi_HostAddress = http://localhost:3000
+
+GET {{DisasterApi_HostAddress}}/
+Accept: application/json
+
+###
