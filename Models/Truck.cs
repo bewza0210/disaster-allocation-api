@@ -12,7 +12,7 @@ public class Truck
     [JsonIgnore]
     public int id { get; set; }
 
-    public string AreaID { get; set; }
+    public string TruckID { get; set; }
 
     public Dictionary<string, int> AvailableResources { get; set; } = new();
 

@@ -17,15 +17,17 @@ public class DisasterController : ControllerBase
     [HttpPost("areas")]
     public IActionResult AddAffectedAreas([FromBody] Area area)
     {
-        _service.AddAffectedArea(area);
-        return Ok(new { message = "Adding allow affected areas" });
+        var result = _service.AddAffectedArea(area);
+        if (!result.success) return Conflict(new { result.message });
+        return Ok(new { result.message });
     }
 
     [HttpPost("trucks")]
     public IActionResult AddResourceTrucks([FromBody] Truck truck)
     {
-        _service.AddResourceTruck(truck);
-        return Ok(new { message = "Allow adding resources trucks" });
+        var result = _service.AddResourceTruck(truck);
+        if (!result.success) return Conflict(new { result.message });
+        return Ok(new { result.message });
     }
 
     [HttpPost("assignments")]
