@@ -31,10 +31,11 @@ public class DisasterController : ControllerBase
     }
 
     [HttpPost("assignments")]
-    public IActionResult GenerateAssignments()
+    public async Task<IActionResult> GenerateAssignments()
     {
-        _service.GenerateAssignments();
-        return Ok(new { message = "Generate assignments to redis cache" });
+        var result = await _service.GenerateAssignments();
+        if (!result.success) return Conflict(new { result.message });
+        return Ok(new { result.message });
     }
 
     [HttpGet("assignments")]
