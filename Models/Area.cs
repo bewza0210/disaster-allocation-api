@@ -14,6 +14,7 @@ public class Area
 
     public required string AreaID { get; set; }
 
+    [Range(1, 5, ErrorMessage = "UrgentyLevel must be between 1 and 5")]
     public int UrgentyLevel { get; set; }
 
     public Dictionary<string, int> RequireResources { get; set; } = new();

@@ -17,38 +17,35 @@ public class DisasterController : ControllerBase
     [HttpPost("areas")]
     public async Task<IActionResult> AddAffectedAreas([FromBody] Area area)
     {
-        var result = await _service.AddAffectedArea(area);
-        if (!result.success) return Conflict(new { result.message });
-        return Ok(new { result.message });
+        var (statusCode, success, message) = await _service.AddAffectedArea(area);
+        return StatusCode(statusCode, new { success, message });
     }
 
     [HttpPost("trucks")]
     public async Task<IActionResult> AddResourceTrucks([FromBody] Truck truck)
     {
-        var result = await _service.AddResourceTruck(truck);
-        if (!result.success) return Conflict(new { result.message });
-        return Ok(new { result.message});
+        var (statusCode, success, message) = await _service.AddResourceTruck(truck);
+        return StatusCode(statusCode, new {  success, message });
     }
 
     [HttpPost("assignments")]
     public async Task<IActionResult> GenerateAssignments()
     {
-        var result = await _service.GenerateAssignments();
-        if (!result.success) return Conflict(new { result.message });
-        return Ok(new { result.message });
+        var (statusCode, success, message) = await _service.GenerateAssignments();
+        return StatusCode(statusCode, new { success, message });
     }
 
     [HttpGet("assignments")]
-    public IActionResult GetAssignments()
+    public async Task<IActionResult> GetAssignments()
     {
-        _service.GetAssignments();
-        return Ok(new { message = "Get assignments in redis cache" });
+        var (statusCode, success, message, data) = await _service.GetAssignments();
+        return StatusCode(statusCode, new { success, message, data });
     }
 
     [HttpDelete("assignments")]
-    public IActionResult DeleteAssignments()
+    public async Task<IActionResult> DeleteAssignments()
     {
-        _service.DeleteAssignments();
-        return Ok(new { message = "Delete assignments in redis cache" });
+        var (statusCode, success, message) = await _service.DeleteAssignments();
+        return StatusCode(statusCode, new { success, message });
     }
 }

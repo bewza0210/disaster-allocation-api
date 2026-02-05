@@ -2,6 +2,7 @@
 using DisasterApi.Models;
 using Microsoft.Extensions.Caching.Distributed;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 
 namespace DisasterApi.Services;
 
@@ -15,10 +16,10 @@ public class DisasterService
     {
         _context = context;
         _cache = cache;
-        _AssignmentCacheOptions = new DistributedCacheEntryOptions{AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30) };
+        _AssignmentCacheOptions = new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30) };
     }
 
-    public async Task<(bool success, string message)> AddAffectedArea(Area area)
+    public async Task<(int statusCode, bool success, string message)> AddAffectedArea(Area area)
     {
         try
         {
@@ -29,24 +30,21 @@ public class DisasterService
                 existing.UrgentyLevel = area.UrgentyLevel;
                 existing.RequireResources = area.RequireResources;
                 existing.TimeConstraint = area.TimeConstraint;
-            }
-            else
-            {
-                _context.Areas.Add(area);
-                existing = area;
+                _context.SaveChanges();
+                return (200, true, $"AreaID '{area.AreaID}' updated successfully");
             }
 
+            _context.Areas.Add(area);
             _context.SaveChanges();
-
-            return (true, $"AreaID '{area.AreaID}' successfully");
+            return (201, true, $"AreaID '{area.AreaID}' created successfully");
         }
         catch (Exception ex)
         {
-            return (false, $"Error processing Area: {ex.Message}");
+            return (500, false, $"Error processing Area: {ex.Message}");
         }
     }
 
-    public async Task<(bool success, string message)> AddResourceTruck(Truck truck)
+    public async Task<(int statusCode, bool success, string message)> AddResourceTruck(Truck truck)
     {
         try
         {
@@ -56,32 +54,33 @@ public class DisasterService
             {
                 existing.AvailableResources = truck.AvailableResources;
                 existing.TravelTimeToArea = truck.TravelTimeToArea;
-            }
-            else
-            {
-                _context.Trucks.Add(truck);
-                existing = truck;
+                _context.SaveChanges();
+                return (200, true, $"TruckID '{truck.TruckID}' updated successfully");
             }
 
+            _context.Trucks.Add(truck);
             _context.SaveChanges();
-
-            return (true, $"TruckID '{truck.TruckID}' successfully");
+            return (201, true, $"TruckID '{truck.TruckID}' created successfully");
         }
         catch (Exception ex)
         {
-            return (false, $"Error processing Truck: {ex.Message}");
+            return (500, false, $"Error processing Truck: {ex.Message}");
         }
     }
 
-    public async Task<(bool success, string message)> GenerateAssignments()
+    public async Task<(int statusCode, bool success, string message)> GenerateAssignments()
     {
         try
         {
             var areas = _context.Areas.OrderByDescending(a => a.UrgentyLevel).ToList();
-            if (!areas.Any()) return (false, "No areas found");
+            if (!areas.Any())
+                return (404, false, "No areas found");
 
             var trucks = _context.Trucks.ToList();
-            if (!trucks.Any()) return (false, "No trucks found");
+            if (!trucks.Any())
+                return (404, false, "No trucks found");
+
+            var assignmentsCreated = 0;
 
             foreach (var area in areas)
             {
@@ -95,68 +94,113 @@ public class DisasterService
                         RequireDelivered = new Dictionary<string, int>(area.RequireResources)
                     };
                     _context.Assignments.Add(assignment);
-                    foreach (var resource in area.RequireResources) 
+
+                    foreach (var resource in area.RequireResources)
                         matchedTruck.AvailableResources[resource.Key] -= resource.Value;
+
+                    assignmentsCreated++;
                 }
             }
 
+            if (assignmentsCreated == 0)
+                return (400, false, "No matching trucks found for any area");
+
             _context.SaveChanges();
 
-            // Cache assignments
-            var assignments = _context.Assignments.ToList();
+            var assignments = _context.Assignments.Select(a => new
+            {
+                AreaID = a.Area.AreaID,
+                TruckID = a.Truck.TruckID,
+                DeliveredResource = a.RequireDelivered
+            }).ToList();
+
             await _cache.SetStringAsync(
                 "assignments:all",
                 JsonSerializer.Serialize(assignments),
                 _AssignmentCacheOptions);
 
-            return (true, $"Generate assignments success");
+            return (201, true, $"Generated {assignmentsCreated} assignments successfully");
         }
         catch (Exception ex)
         {
-            return (false, $"Error Generate assignment: {ex.Message}");
+            return (500, false, $"Error generating assignments: {ex.Message}");
         }
     }
 
-    public List<Assignment> GetAssignments()
+    public async Task<(int statusCode, bool success, string message, object? data)> GetAssignments()
     {
-        return _context.Assignments.ToList();
+        try
+        {
+            var cached = await _cache.GetStringAsync("assignments:all");
+            if (cached != null)
+            {
+                var cachedData = JsonSerializer.Deserialize<object>(cached);
+                return (200, true, "Retrieved from cache", cachedData);
+            }
+
+            var assignments = _context.Assignments.Select(a => new
+            {
+                AreaID = a.Area.AreaID,
+                TruckID = a.Truck.TruckID,
+                DeliveredResource = a.RequireDelivered
+            }).ToList();
+
+            if (!assignments.Any())
+                return (404, true, "No assignments found", new List<object>());
+
+            await _cache.SetStringAsync(
+                "assignments:all",
+                JsonSerializer.Serialize(assignments),
+                _AssignmentCacheOptions);
+
+            return (200, true, "Retrieved from database", assignments);
+        }
+        catch (Exception ex)
+        {
+            return (500, false, $"Error: {ex.Message}", null);
+        }
     }
 
-    public void DeleteAssignments()
+    public async Task<(int statusCode, bool success, string message)> DeleteAssignments()
     {
-        var assignments = _context.Assignments.ToList();
-        _context.Assignments.RemoveRange(assignments);
-        _context.SaveChanges();
+        try
+        {
+            var assignments = _context.Assignments.ToList();
+            if (!assignments.Any())
+                return (404, true, "No assignments to delete");
+
+            _context.Assignments.RemoveRange(assignments);
+            _context.SaveChanges();
+
+            await _cache.RemoveAsync("assignments:all");
+
+            return (200, true, $"Deleted {assignments.Count} assignments successfully");
+        }
+        catch (Exception ex)
+        {
+            return (500, false, $"Error deleting assignments: {ex.Message}");
+        }
     }
 
-
-    /// <summary>
-    /// หา Truck ที่ match กับ Area
-    /// - ต้องมี resource keys ครบทุกตัวที่ Area ต้องการ
-    /// - AvailableResources >= RequireResources ทุก key
-    /// </summary>
     private Truck? FindMatchingTruck(Area area, List<Truck> trucks)
     {
         foreach (var truck in trucks)
         {
-            // 1. เช็คว่า truck มี keys ครบทุกตัวที่ area ต้องการไหม
             var allKeysMatch = area.RequireResources.Keys
                 .All(key => truck.AvailableResources.ContainsKey(key));
             if (!allKeysMatch)
                 continue;
 
-            // 2. เช็คว่า AvailableResources >= RequireResources ทุก key ไหม
             var canFulfill = area.RequireResources
                 .All(req => truck.AvailableResources[req.Key] >= req.Value);
             if (!canFulfill)
                 continue;
 
-            // 3. เช็คว่า TravelTime <= TimeConstraint ไหม
             if (!truck.TravelTimeToArea.TryGetValue(area.AreaID, out var travelTime))
-                continue;  // ถ้าไม่มี TravelTime ไปยัง area นี้ ข้าม
+                continue;
 
             if (travelTime > area.TimeConstraint)
-                continue;  // ถ้าเดินทางนานเกินไป ข้าม
+                continue;
 
             return truck;
         }
