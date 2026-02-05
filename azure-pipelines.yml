@@ -1,0 +1,46 @@
+trigger:
+  - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  buildConfiguration: 'Release'
+
+stages:
+  - stage: Build
+    jobs:
+      - job: Build
+        steps:
+          - task: UseDotNet@2
+            inputs:
+              version: '8.0.x'
+
+          - script: dotnet build --configuration $(buildConfiguration)
+            displayName: 'Build'
+
+          - script: dotnet test --configuration $(buildConfiguration)
+            displayName: 'Test'
+
+          - script: dotnet publish --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)
+            displayName: 'Publish'
+
+          - task: PublishBuildArtifacts@1
+            inputs:
+              pathToPublish: '$(Build.ArtifactStagingDirectory)'
+              artifactName: 'webapp'
+
+  - stage: Deploy
+    dependsOn: Build
+    jobs:
+      - deployment: Deploy
+        environment: 'Production'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureWebApp@1
+                  inputs:
+                    azureSubscription: 'YOUR-SERVICE-CONNECTION'
+                    appName: 'disaster-allocation-api'
+                    package: '$(Pipeline.Workspace)/webapp'
