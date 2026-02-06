@@ -33,6 +33,7 @@ builder.Services.AddSwaggerGen(c =>{});
 var connectionString =
     builder.Configuration.GetConnectionString("DefaultConnection")
     ?? Environment.GetEnvironmentVariable("CUSTOMCONNSTR_DefaultConnection");
+
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
 builder.Services.AddScoped<DisasterService>();
 builder.Services.AddStackExchangeRedisCache(options =>
@@ -43,32 +44,25 @@ builder.Services.AddStackExchangeRedisCache(options =>
 
 var app = builder.Build();
 
-// เช็คสถานะการเชื่อมต่อฐานข้อมูลตอนเริ่มรันแอป
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    Console.WriteLine($"Checking database connection... {connectionString}");
     try
     {
         if (!db.Database.CanConnect())
-        {
             Console.WriteLine("❌ Cannot connect to the database.");
-            // หรือ throw new Exception("Cannot connect to the database.");
-        }
         else
-        {
             Console.WriteLine("✅ Database connection successful.");
-        }
     }
     catch (Exception ex)
     {
         Console.WriteLine($"❌ Database connection error: {ex.Message}");
-        // หรือ throw;
     }
 }
 
 app.UseSwagger();
 app.UseSwaggerUI();
-
 app.UseHttpsRedirection();
 app.MapControllers();
 
