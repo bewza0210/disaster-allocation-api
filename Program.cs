@@ -50,7 +50,6 @@ app.MapControllers();
 
 // API Status endpoint
 app.MapGet("/", () => Results.Ok(new { message = "Hello disaster allocation API, For documentation visit /swagger" }))
-    .WithName("RootEndpoint")
-    .WithOpenApi();
+    .WithName("RootEndpoint");
 
 app.Run();
