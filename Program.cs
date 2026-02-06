@@ -59,6 +59,8 @@ using (var scope = app.Services.CreateScope())
     }
 
     var cache = scope.ServiceProvider.GetRequiredService<IDistributedCache>();
+    var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
+    Console.WriteLine($"Redis connection string: {redisConnectionString}");
     try
     {
         var testKey = "redis-connection-test";
