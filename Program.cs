@@ -1,4 +1,4 @@
-using DisasterApi.Data;
+﻿using DisasterApi.Data;
 using DisasterApi.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
@@ -39,9 +39,32 @@ builder.Services.AddStackExchangeRedisCache(options =>
 });
 
 var app = builder.Build();
+
+// เช็คสถานะการเชื่อมต่อฐานข้อมูลตอนเริ่มรันแอป
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    try
+    {
+        if (!db.Database.CanConnect())
+        {
+            Console.WriteLine("❌ Cannot connect to the database.");
+            // หรือ throw new Exception("Cannot connect to the database.");
+        }
+        else
+        {
+            Console.WriteLine("✅ Database connection successful.");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ Database connection error: {ex.Message}");
+        // หรือ throw;
+    }
+}
+
 app.UseSwagger();
 app.UseSwaggerUI();
-
 
 app.UseHttpsRedirection();
 app.MapControllers();

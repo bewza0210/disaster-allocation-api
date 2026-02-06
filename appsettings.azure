@@ -1,0 +1,15 @@
+// Description: Configuration file for Azure deployment environment.
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=db.iczhjhlwzbzjwkucdjbr.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=RrB8p3usQ7pyzWwh;SSL Mode=Require;Trust Server Certificate=true",
+    "Redis": "localhost:6379"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning",
+      "Microsoft.EntityFrameworkCore": "Information"
+    }
+  },
+  "AllowedHosts": "*"
+}

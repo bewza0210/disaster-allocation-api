@@ -22,6 +22,9 @@ stages:
           - script: dotnet test --configuration $(buildConfiguration)
             displayName: 'Test'
 
+          - script: cp appsettings.azure.json appsettings.json
+            displayName: 'Replace appsettings.json with appsettings.azure.json'
+
           - script: dotnet publish --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)
             displayName: 'Publish'
 
