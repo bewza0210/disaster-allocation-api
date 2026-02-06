@@ -1,8 +1,8 @@
 ﻿using DisasterApi.Data;
 using DisasterApi.Models;
-using Microsoft.Extensions.Caching.Distributed;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace DisasterApi.Services;
 
