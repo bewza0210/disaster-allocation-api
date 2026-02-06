@@ -9,7 +9,7 @@ on:
       - main
 
 env:
-  AZURE_WEBAPP_NAME: 'disasater'
+  AZURE_WEBAPP_NAME: 'Disaster-api'
   DOTNET_VERSION: '8.0.x'
 
 jobs:
